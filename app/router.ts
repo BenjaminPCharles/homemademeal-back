@@ -14,6 +14,31 @@ router.post('/signup', signUp);
 router.patch('/confirm/:id', confirm);
 router.post('/login', login);
 router.patch('/user/:id', uploadUser);
+
+
+import passport from "passport";
+
+router.get(
+  "/auth/google",
+  passport.authenticate("google", {
+    scope: ["email", "profile"],
+  })
+);
+
+router.get(
+    "/auth/google/callback",
+    passport.authenticate("google", {
+      session: true
+    }),
+    (req, res) => {
+        return res.status(200).json(req.user);
+    }
+);
+
+
+
+
+
 // Rajouter une route delete
 
 // Reciptes route
