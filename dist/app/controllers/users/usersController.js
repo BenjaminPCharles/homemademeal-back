@@ -34,6 +34,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.uploadUser = exports.login = exports.confirm = exports.signUp = exports.checkUsers = void 0;
 const db_client_1 = require("../../db_client");
+require("dotenv/config");
 const bcrypt = __importStar(require("bcrypt"));
 const nodemailer = __importStar(require("nodemailer"));
 const jwt = __importStar(require("jsonwebtoken"));
@@ -79,12 +80,14 @@ const signUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             });
             const token = jwt.sign(resultAdd.rows[0].id, process.env.SECRET_JWT);
             if (token) {
+                const tokenWithoutDots = token.replace(/\./g, '-');
                 yield transport.sendMail({
                     from: 'Homemademeal <c72e713e5c-b76a9d+1@inbox.mailtrap.io>',
                     to: 'benake83@gmail.com',
                     subject: 'Activation de compte',
                     text: 'Activation de compte',
-                    html: `<p> Cliquez sur le lien pour activer votre compte: <a href="http://localhost:8000/confirm/${token}"> Activation </a> </p>` // html body
+                    // ENVOYER LE MAIL AU LIEN DE l'APP FRONT AVEC LE TOKEN BACK (USEEFFECT)
+                    html: `<p> Cliquez sur le lien pour activer votre compte: <a href="http://localhost:5173/confirm/${tokenWithoutDots}"> Activation </a> </p>` // html body
                 });
             }
             return res.status(200).json(resultAdd.rows);

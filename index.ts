@@ -4,10 +4,17 @@ const app: Express = express();
 
 import "./auth";
 
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended : false }))
 
+
+import cors from 'cors';
+app.use(cors({
+    origin: '*',
+    methods: ['GET','POST','DELETE','UPDATE','PUT','PATCH']
+}));
 
 // Session
 app.use(session({

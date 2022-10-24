@@ -4,6 +4,7 @@
 import { Request, Response  } from "express";
 import { QueryResult } from 'pg';
 import { pool } from "../../db_client";
+import 'dotenv/config';
 
 import * as bcrypt from 'bcrypt';
 import * as nodemailer from "nodemailer";
@@ -72,12 +73,14 @@ export const signUp = async (req: Request<never, never, { email: string; passwor
             const token = jwt.sign(resultAdd.rows[0].id, process.env.SECRET_JWT)
 
             if(token) {
+                const tokenWithoutDots = token.replace(/\./g,'-')
                 await transport.sendMail({
                     from: 'Homemademeal <c72e713e5c-b76a9d+1@inbox.mailtrap.io>', // sender address
                     to: 'benake83@gmail.com', // list of receivers
                     subject: 'Activation de compte', // Subject line
                     text: 'Activation de compte', // plaintext body
-                    html: `<p> Cliquez sur le lien pour activer votre compte: <a href="http://localhost:8000/confirm/${token}"> Activation </a> </p>` // html body
+                    // ENVOYER LE MAIL AU LIEN DE l'APP FRONT AVEC LE TOKEN BACK (USEEFFECT)
+                    html: `<p> Cliquez sur le lien pour activer votre compte: <a href="http://localhost:5173/confirm/${tokenWithoutDots}"> Activation </a> </p>` // html body
                 });
             }
     

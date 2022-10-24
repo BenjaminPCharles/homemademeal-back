@@ -10,6 +10,11 @@ require("./auth");
 // Middleware
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
+const cors_1 = __importDefault(require("cors"));
+app.use((0, cors_1.default)({
+    origin: '*',
+    methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH']
+}));
 // Session
 app.use((0, express_session_1.default)({
     resave: false,

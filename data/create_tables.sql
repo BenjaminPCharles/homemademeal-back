@@ -34,6 +34,7 @@ CREATE TABLE "ingredients" (
     "unity" TEXT NOT NULL DEFAULT '',
     "unity_number" INTEGER NOT NULL DEFAULT 0,
     "is_important" BOOLEAN NOT NULL DEFAULT FALSE,
+    "user_id" INTEGER NOT NULL REFERENCES users("id") ON DELETE CASCADE,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updated_at" TIMESTAMPTZ
 );
