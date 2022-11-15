@@ -13,6 +13,9 @@ declare global {
       SALTROUNDS: number | string;
       USER_MAIL?: string;
       PASSWORD_MAIL?: string;
+      GOOGLE_CLIENT_ID?: string | any;
+      GOOGLE_CLIENT_SECRET?: string | any;
+      CALLBACKURL?: string;
     }
   }
 }
