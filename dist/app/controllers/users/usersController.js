@@ -32,13 +32,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadUser = exports.login = exports.confirm = exports.signUp = exports.checkUsers = void 0;
+exports.uploadUser = exports.secure = exports.logout = exports.auth = exports.login = exports.confirm = exports.signUp = exports.checkUsers = void 0;
 const db_client_1 = require("../../db_client");
 require("dotenv/config");
 const bcrypt = __importStar(require("bcrypt"));
 const nodemailer = __importStar(require("nodemailer"));
 const jwt = __importStar(require("jsonwebtoken"));
 const checkUsers = (req, res) => {
+    const test = req.header('authorization');
+    console.log(test);
     res.send("Users");
 };
 exports.checkUsers = checkUsers;
@@ -146,11 +148,17 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             if (passwordCheck) {
                 const userInfos = {
                     id: resultCheck.rows[0].id,
-                    email: resultCheck.rows[0].email,
+                    // email: resultCheck.rows[0].email,
                     firstName: resultCheck.rows[0].firstName,
                     secondName: resultCheck.rows[0].secondName,
                 };
-                return res.status(200).json(userInfos);
+                const token = jwt.sign({ userInfos }, process.env.SECRET_JWT);
+                // return res.status(200).json(userInfos);
+                return res.cookie("access_token", token, {
+                    maxAge: 86400 * 1000,
+                    httpOnly: true,
+                    secure: false
+                }).status(200).json("Logged success");
             }
             else {
                 return res.status(404).json('Please check your password)');
@@ -166,16 +174,151 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.login = login;
+const auth = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const token = req.cookies.access_token;
+        if (!token) {
+            res.status(403).json('Not authorize');
+        }
+        const data = jwt.verify(token, process.env.SECRET_JWT);
+        req.user = {
+            id: data.userInfos.id,
+            firstName: data.userInfos.firstName,
+            secondName: data.userInfos.secondName
+        };
+        return next();
+    }
+    catch (err) {
+        return res.status(500).json('Authorization failed');
+    }
+});
+exports.auth = auth;
+const logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    return res.clearCookie("access_token").status(200).json("Logout");
+});
+exports.logout = logout;
+const secure = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    return res.status(200).json(req.user);
+});
+exports.secure = secure;
 const uploadUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const { firstName, secondName } = req.body;
-        const queryChange = {
-            text: `UPDATE "users" SET "firstName" = $1, "secondName" = $2, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $3 RETURNING *`,
-            values: [firstName, secondName, id]
-        };
-        const resultCheck = yield db_client_1.pool.query(queryChange);
-        return res.status(200).json(resultCheck.rows);
+        const { firstName, secondName, password } = req.body;
+        console.log(firstName, secondName, password);
+        if (firstName !== "" && secondName === "" && password === "") {
+            const queryChange = {
+                text: `UPDATE "users" SET "firstName" = $1, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $2 RETURNING *`,
+                values: [firstName, id]
+            };
+            const resultCheck = yield db_client_1.pool.query(queryChange);
+            if (resultCheck) {
+                const queryCheckId = {
+                    text: `SELECT * FROM "users" WHERE "id" = $1`,
+                    values: [id]
+                };
+                const resultCheckId = yield db_client_1.pool.query(queryCheckId);
+                const userInfos = {
+                    id: resultCheckId.rows[0].id,
+                    firstName: resultCheckId.rows[0].firstName,
+                };
+                const token = jwt.sign({ userInfos }, process.env.SECRET_JWT);
+                return res.cookie("access_token", token, {
+                    maxAge: 86400 * 1000,
+                    httpOnly: true,
+                    secure: false
+                }).status(200).json("Update success");
+            }
+            else {
+                return res.status(403).json("Cannot change firstname");
+            }
+        }
+        else if (firstName !== "" && secondName !== "" && password === "") {
+            const queryChange = {
+                text: `UPDATE "users" SET "firstName" = $1, "secondName" = $2, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $3 RETURNING *`,
+                values: [firstName, secondName, id]
+            };
+            const resultCheck = yield db_client_1.pool.query(queryChange);
+            if (resultCheck) {
+                const queryCheckId = {
+                    text: `SELECT * FROM "users" WHERE "id" = $1`,
+                    values: [id]
+                };
+                const resultCheckId = yield db_client_1.pool.query(queryCheckId);
+                const userInfos = {
+                    id: resultCheckId.rows[0].id,
+                    firstName: resultCheckId.rows[0].firstName,
+                };
+                const token = jwt.sign({ userInfos }, process.env.SECRET_JWT);
+                return res.cookie("access_token", token, {
+                    maxAge: 86400 * 1000,
+                    httpOnly: true,
+                    secure: false
+                }).status(200).json("Update success");
+            }
+            else {
+                return res.status(403).json("Cannot change firstname or secondname");
+            }
+        }
+        else if (firstName !== "" && secondName !== "" && password !== "") {
+            const passwordHash = yield bcrypt.hash(password, 10);
+            const queryChange = {
+                text: `UPDATE "users" SET "firstName" = $1, "secondName" = $2, "password" = $3, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $4 RETURNING *`,
+                values: [firstName, secondName, passwordHash, id]
+            };
+            const resultCheck = yield db_client_1.pool.query(queryChange);
+            if (resultCheck) {
+                const queryCheckId = {
+                    text: `SELECT * FROM "users" WHERE "id" = $1`,
+                    values: [id]
+                };
+                const resultCheckId = yield db_client_1.pool.query(queryCheckId);
+                const userInfos = {
+                    id: resultCheckId.rows[0].id,
+                    firstName: resultCheckId.rows[0].firstName,
+                };
+                const token = jwt.sign({ userInfos }, process.env.SECRET_JWT);
+                return res.cookie("access_token", token, {
+                    maxAge: 86400 * 1000,
+                    httpOnly: true,
+                    secure: false
+                }).status(200).json("Update success");
+            }
+            else {
+                return res.status(403).json("Cannot change firstname secondname or password");
+            }
+        }
+        else if (firstName === "" && secondName === "" && password !== "") {
+            const passwordHash = yield bcrypt.hash(password, 10);
+            const queryChange = {
+                text: `UPDATE "users" SET "password" = $1, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $2 RETURNING *`,
+                values: [passwordHash, id]
+            };
+            const resultCheck = yield db_client_1.pool.query(queryChange);
+            if (resultCheck) {
+                const queryCheckId = {
+                    text: `SELECT * FROM "users" WHERE "id" = $1`,
+                    values: [id]
+                };
+                const resultCheckId = yield db_client_1.pool.query(queryCheckId);
+                const userInfos = {
+                    id: resultCheckId.rows[0].id,
+                    firstName: resultCheckId.rows[0].firstName,
+                };
+                const token = jwt.sign({ userInfos }, process.env.SECRET_JWT);
+                return res.cookie("access_token", token, {
+                    maxAge: 86400 * 1000,
+                    httpOnly: true,
+                    secure: false
+                }).status(200).json("Update success");
+            }
+            else {
+                return res.status(403).json("Cannot change password");
+            }
+        }
+        else {
+            return res.status(200).json("nothing changed");
+        }
     }
     catch (err) {
         console.error(err);
