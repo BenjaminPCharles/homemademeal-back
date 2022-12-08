@@ -38,6 +38,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const passport_1 = __importDefault(require("passport"));
 const passport_google_oauth20_1 = __importDefault(require("passport-google-oauth20"));
 const GoogleStrategy = passport_google_oauth20_1.default.Strategy;
+require("dotenv/config");
 const bcrypt = __importStar(require("bcrypt"));
 const db_client_1 = require("./app/db_client");
 require("dotenv/config");
@@ -63,24 +64,27 @@ passport_1.default.use(new GoogleStrategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "/auth/google/callback",
 }, (accessToken, refreshToken, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
-    let user = {};
+    let userInfos = {};
     try {
         const currentUserQuery = yield db_client_1.pool.query(`SELECT * FROM "users" WHERE "email" ILIKE $1;`, [profile._json.email]);
         if (currentUserQuery.rows.length === 0) {
             console.log("salut");
             const passwordHash = yield bcrypt.hash(profile._json.sub, 10);
-            yield db_client_1.pool.query(`INSERT INTO "users" (email, password) VALUES ($1, $2) RETURNING *`, [profile._json.email, passwordHash]);
+            yield db_client_1.pool.query(`INSERT INTO "users" (email, password, is_confirm) VALUES ($1, $2, $3) RETURNING *`, [profile._json.email, passwordHash, profile._json.email_verified]);
             const userQuery = yield db_client_1.pool.query(`SELECT * FROM "users" WHERE "email" ILIKE $1;`, [profile._json.email]);
-            user = {
+            userInfos = {
                 id: userQuery.rows[0].id,
+                firstName: profile._json.given_name,
             };
         }
         else {
-            user = {
+            userInfos = {
                 id: currentUserQuery.rows[0].id,
+                firstName: profile._json.given_name,
             };
+            console.log("test1 : " + userInfos);
         }
-        done(null, user);
+        done(null, userInfos);
     }
     catch (err) {
         done(err);

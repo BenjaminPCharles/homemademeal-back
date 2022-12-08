@@ -10,6 +10,9 @@ import * as bcrypt from 'bcrypt';
 import * as nodemailer from "nodemailer";
 import * as jwt from 'jsonwebtoken';
 
+
+// -------------------    MOVE QUERIES INTO DATAMAPPER    ----------------------------
+
 export const checkUsers = (req: Request, res: Response) => {
     const test = req.header('authorization');
     console.log(test)
@@ -86,7 +89,7 @@ export const signUp = async (req: Request<never, never, { email: string; passwor
                 });
             }
     
-            return res.status(200).json(resultAdd.rows);
+            return res.status(200).json("Signup success");
         }
 
     } catch(err) {
@@ -149,12 +152,15 @@ export const login = async (req: Request<never, never, { email: string; password
     try {
 
         const {email, password} = req.body;
+        console.log('email ' + email)
+        console.log('password ' + password)
 
         if(!email){
             res.status(404).json('Email cannot be empty')
         }
 
         if(!password){
+            console.log("error")
             res.status(404).json('Password cannot be empty')
         }
 
@@ -171,7 +177,7 @@ export const login = async (req: Request<never, never, { email: string; password
         const resultCheck: QueryResult = await pool.query(queryCheck);
 
         console.log(resultCheck.rows)
-        console.log(resultCheck.rows[0].is_confirm)
+        // console.log(resultCheck.rows[0].is_confirm)
 
         if(resultCheck && resultCheck.rows[0].is_confirm === true){
             const passwordCheck: any = await bcrypt.compare(password ,resultCheck.rows[0].password);
@@ -186,13 +192,12 @@ export const login = async (req: Request<never, never, { email: string; password
 
                 const userInfos = {
                     id: resultCheck.rows[0].id,
-                    // email: resultCheck.rows[0].email,
                     firstName:  resultCheck.rows[0].firstName,
-                    secondName:  resultCheck.rows[0].secondName,
                 }
 
                 const token = jwt.sign({userInfos}, process.env.SECRET_JWT);
             
+                console.log(token)
                 
                 // return res.status(200).json(userInfos);
                 return res.cookie("access_token", token, {
@@ -203,19 +208,19 @@ export const login = async (req: Request<never, never, { email: string; password
 
             } else {
 
-                return res.status(404).json('Please check your password)');
+                return res.status(404).json('Please check your password');
 
             }
             
         } else {
 
-            return res.status(404).json('Please check your email');
+            return res.status(403).json('Please check your email');
 
         }
 
 
     }catch(err) {
-        console.error(err)
+        // console.error(err)
         return res.status(500).json('Login failed');
     }
 };
@@ -223,18 +228,20 @@ export const login = async (req: Request<never, never, { email: string; password
 export const auth = async (req: Request, res: Response, next: any) => {
     try {
         const token = req.cookies.access_token;
-
+        
         if(!token){
-            res.status(403).json('Not authorize')
+            return res.status(403).json('Not authorize')
         }
-
+        
         
         const data : any = jwt.verify(token, process.env.SECRET_JWT)
+
+      console.log(data.userInfos)
+      console.log(data)
 
         req.user = {
             id: data.userInfos.id,
             firstName: data.userInfos.firstName,
-            secondName: data.userInfos.secondName
         }
 
         return next();
@@ -249,8 +256,8 @@ export const logout = async (req: Request, res: Response) => {
     return res.clearCookie("access_token").status(200).json("Logout");
 }
 
-export const secure = async (req: Request, res: Response) => {
-    
+export const secure = async (req: Request, res: Response) => {   
+    console.log("SECURE") 
     return res.status(200).json(req.user);
 }
 

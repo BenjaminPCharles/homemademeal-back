@@ -15,24 +15,24 @@ import cors from 'cors';
 app.use(cors({
     credentials: true,
     origin: 'http://localhost:5173',
-    // methods: ['GET','POST','DELETE','UPDATE','PUT','PATCH']
+    methods: ['GET','POST','DELETE','UPDATE','PUT','PATCH']
 }));
 
 
 // Session
-// app.use(session({
-//     resave: false,
-//     saveUninitialized: true,
-//     secret: 'SECRET',
-//     // cookie: {secure: true} 
-// }));
+app.use(session({
+    resave: false,
+    saveUninitialized: true,
+    secret: 'SECRET',
+    // cookie: {secure: true} 
+}));
 
 // COOKIE
 app.use(cookieParser());
 
 import passport from "passport";
 app.use(passport.initialize());
-// app.use(passport.session());
+app.use(passport.session());
 
 import 'dotenv/config';
 // Définition du PORT

@@ -2,6 +2,8 @@
 import { Router } from 'express';
 import cors from 'cors';
 
+import * as jwt from 'jsonwebtoken';
+
 const router = Router();
 
 // Import controllers
@@ -25,8 +27,24 @@ router.get('/api/v1/secure', auth, secure);
 
 import passport from "passport";
 
+router.get("/google/login", (req: any, res) => {
+  console.log(req.user)
+
+  const userInfos = req.user
+
+  //Rajouter un googleAuth true a userInfos
+  const token = jwt.sign({userInfos}, process.env.SECRET_JWT);
+
+  return res.cookie("access_token", token, {
+    maxAge: 86400 * 1000,
+    httpOnly: true,
+    secure: false
+  }).status(200).json("Logged success");
+});
+
+
 router.get(
-  "/auth/google",
+  "/auth/google", cors(),
   passport.authenticate("google", {
     scope: ["email", "profile"],
   })
@@ -35,11 +53,9 @@ router.get(
 router.get(
     "/auth/google/callback",
     passport.authenticate("google", {
-      session: true
-    }),
-    (req, res) => {
-        return res.status(200).json(req.user);
-    }
+      session: true,
+      successRedirect: "http://localhost:5173/google/auth"
+    })
 );
 
 

@@ -38,6 +38,7 @@ require("dotenv/config");
 const bcrypt = __importStar(require("bcrypt"));
 const nodemailer = __importStar(require("nodemailer"));
 const jwt = __importStar(require("jsonwebtoken"));
+// -------------------    MOVE QUERIES INTO DATAMAPPER    ----------------------------
 const checkUsers = (req, res) => {
     const test = req.header('authorization');
     console.log(test);
@@ -92,7 +93,7 @@ const signUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                     html: `<p> Cliquez sur le lien pour activer votre compte: <a href="http://localhost:5173/confirm/${tokenWithoutDots}"> Activation </a> </p>` // html body
                 });
             }
-            return res.status(200).json(resultAdd.rows);
+            return res.status(200).json("Signup success");
         }
     }
     catch (err) {
@@ -130,10 +131,13 @@ exports.confirm = confirm;
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
+        console.log('email ' + email);
+        console.log('password ' + password);
         if (!email) {
             res.status(404).json('Email cannot be empty');
         }
         if (!password) {
+            console.log("error");
             res.status(404).json('Password cannot be empty');
         }
         const queryCheck = {
@@ -142,17 +146,16 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         };
         const resultCheck = yield db_client_1.pool.query(queryCheck);
         console.log(resultCheck.rows);
-        console.log(resultCheck.rows[0].is_confirm);
+        // console.log(resultCheck.rows[0].is_confirm)
         if (resultCheck && resultCheck.rows[0].is_confirm === true) {
             const passwordCheck = yield bcrypt.compare(password, resultCheck.rows[0].password);
             if (passwordCheck) {
                 const userInfos = {
                     id: resultCheck.rows[0].id,
-                    // email: resultCheck.rows[0].email,
                     firstName: resultCheck.rows[0].firstName,
-                    secondName: resultCheck.rows[0].secondName,
                 };
                 const token = jwt.sign({ userInfos }, process.env.SECRET_JWT);
+                console.log(token);
                 // return res.status(200).json(userInfos);
                 return res.cookie("access_token", token, {
                     maxAge: 86400 * 1000,
@@ -161,15 +164,15 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 }).status(200).json("Logged success");
             }
             else {
-                return res.status(404).json('Please check your password)');
+                return res.status(404).json('Please check your password');
             }
         }
         else {
-            return res.status(404).json('Please check your email');
+            return res.status(403).json('Please check your email');
         }
     }
     catch (err) {
-        console.error(err);
+        // console.error(err)
         return res.status(500).json('Login failed');
     }
 });
@@ -178,13 +181,14 @@ const auth = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         const token = req.cookies.access_token;
         if (!token) {
-            res.status(403).json('Not authorize');
+            return res.status(403).json('Not authorize');
         }
         const data = jwt.verify(token, process.env.SECRET_JWT);
+        console.log(data.userInfos);
+        console.log(data);
         req.user = {
             id: data.userInfos.id,
             firstName: data.userInfos.firstName,
-            secondName: data.userInfos.secondName
         };
         return next();
     }
@@ -198,6 +202,7 @@ const logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.logout = logout;
 const secure = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("SECURE");
     return res.status(200).json(req.user);
 });
 exports.secure = secure;
