@@ -73,24 +73,37 @@ const signUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             };
             const resultAdd = yield db_client_1.pool.query(queryAdd);
             // NODEMAILER
+            // const transport = nodemailer.createTransport({
+            //     host: "smtp.mailtrap.io",
+            //     port: 2525,
+            //     auth: {
+            //       user: process.env.USER_MAIL,
+            //       pass: process.env.PASSWORD_MAIL
+            //     }
+            // });
             const transport = nodemailer.createTransport({
-                host: "smtp.mailtrap.io",
-                port: 2525,
+                host: "smtp-mail.outlook.com",
+                secure: false,
+                port: 587,
+                tls: {
+                    ciphers: 'SSLv3'
+                },
                 auth: {
-                    user: process.env.USER_MAIL,
-                    pass: process.env.PASSWORD_MAIL
+                    user: process.env.USER_MAIL_OUTLOOK,
+                    pass: process.env.PASSWORD_MAIL_OUTLOOK
                 }
             });
             const token = jwt.sign(resultAdd.rows[0].id, process.env.SECRET_JWT);
             if (token) {
-                const tokenWithoutDots = token.replace(/\./g, '-');
+                const tokenWithoutDots = token.replace(/\./g, '*');
+                console.log(tokenWithoutDots);
                 yield transport.sendMail({
-                    from: 'Homemademeal <c72e713e5c-b76a9d+1@inbox.mailtrap.io>',
+                    // from: 'Homemademeal <c72e713e5c-b76a9d+1@inbox.mailtrap.io>', // sender address
+                    from: `Homemademeal <${process.env.USER_MAIL_OUTLOOK}>`,
                     to: 'benake83@gmail.com',
                     subject: 'Activation de compte',
                     text: 'Activation de compte',
-                    // ENVOYER LE MAIL AU LIEN DE l'APP FRONT AVEC LE TOKEN BACK (USEEFFECT)
-                    html: `<p> Cliquez sur le lien pour activer votre compte: <a href="http://localhost:5173/confirm/${tokenWithoutDots}"> Activation </a> </p>` // html body
+                    html: `<p> Cliquez sur le lien pour activer votre compte: <a href="http://localhost:5173/confirm/${tokenWithoutDots}"> Activation </a></p>` // html body
                 });
             }
             return res.status(200).json("Signup success");
@@ -105,7 +118,11 @@ exports.signUp = signUp;
 const confirm = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const tokenURL = req.params;
-        const decoded = jwt.verify(tokenURL.id, process.env.SECRET_JWT);
+        console.log("test-id : " + tokenURL.id);
+        const replaceByDots = tokenURL.id.replace(/\*/g, '.');
+        console.log("test-after : " + replaceByDots);
+        const decoded = jwt.verify(replaceByDots, process.env.SECRET_JWT);
+        console.log("test decoded : " + decoded);
         const queryUpload = {
             text: `UPDATE "users" SET "is_confirm" = $1, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $2 RETURNING *`,
             values: [true, Number(decoded)]
@@ -119,6 +136,7 @@ const confirm = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 secondName: resultCheck.rows[0].secondName,
                 is_confirm: resultCheck.rows[0].is_confirm,
             };
+            console.log(userInfos);
             return res.status(200).json(userInfos);
         }
     }
@@ -131,8 +149,6 @@ exports.confirm = confirm;
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
-        console.log('email ' + email);
-        console.log('password ' + password);
         if (!email) {
             res.status(404).json('Email cannot be empty');
         }
@@ -145,7 +161,7 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             values: [email]
         };
         const resultCheck = yield db_client_1.pool.query(queryCheck);
-        console.log(resultCheck.rows);
+        // console.log(resultCheck.rows)
         // console.log(resultCheck.rows[0].is_confirm)
         if (resultCheck && resultCheck.rows[0].is_confirm === true) {
             const passwordCheck = yield bcrypt.compare(password, resultCheck.rows[0].password);
@@ -153,9 +169,11 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 const userInfos = {
                     id: resultCheck.rows[0].id,
                     firstName: resultCheck.rows[0].firstName,
+                    googleAuth: false
                 };
                 const token = jwt.sign({ userInfos }, process.env.SECRET_JWT);
-                console.log(token);
+                // console.log(token)
+                console.log("logged");
                 // return res.status(200).json(userInfos);
                 return res.cookie("access_token", token, {
                     maxAge: 86400 * 1000,
@@ -181,14 +199,17 @@ const auth = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         const token = req.cookies.access_token;
         if (!token) {
+            console.log('pas auth');
             return res.status(403).json('Not authorize');
         }
         const data = jwt.verify(token, process.env.SECRET_JWT);
-        console.log(data.userInfos);
-        console.log(data);
+        //   console.log(data.userInfos)
+        //   console.log(data)
+        console.log('auth');
         req.user = {
             id: data.userInfos.id,
             firstName: data.userInfos.firstName,
+            googleAuth: data.userInfos.googleAuth
         };
         return next();
     }

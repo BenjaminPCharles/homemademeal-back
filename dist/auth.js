@@ -75,12 +75,14 @@ passport_1.default.use(new GoogleStrategy({
             userInfos = {
                 id: userQuery.rows[0].id,
                 firstName: profile._json.given_name,
+                googleAuth: true,
             };
         }
         else {
             userInfos = {
                 id: currentUserQuery.rows[0].id,
                 firstName: profile._json.given_name,
+                googleAuth: true,
             };
             console.log("test1 : " + userInfos);
         }

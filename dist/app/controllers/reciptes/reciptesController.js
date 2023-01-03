@@ -18,10 +18,13 @@ exports.checkReciptes = checkReciptes;
 const getAllByUserController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { user_id } = req.params;
+        console.log("test : " + user_id);
+        console.log("test : " + typeof user_id);
         const resultGetAll = yield (0, reciptesDataMapper_1.getAllUserReciptes)(Number(user_id));
         return res.status(200).json(resultGetAll);
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("GetAllByUser failed");
     }
 });
@@ -39,17 +42,22 @@ const deleteReceiptController = (req, res) => __awaiter(void 0, void 0, void 0, 
 exports.deleteReceiptController = deleteReceiptController;
 const addReciptController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, user_id } = req.body;
+        const { name, step, user_id } = req.body;
+        console.log("test :" + { name, step, user_id });
         if (!name) {
             res.status(404).json("Name cannot be empty");
+        }
+        if (!step) {
+            res.status(404).json("Step cannot be empty");
         }
         if (!user_id) {
             res.status(404).json("User id cannot be empty");
         }
-        const result = yield (0, reciptesDataMapper_1.addUserRecipt)(name, Number(user_id));
+        const result = yield (0, reciptesDataMapper_1.addUserRecipt)(name, step, Number(user_id));
         return res.status(200).json(result);
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Add receipt failed");
     }
 });

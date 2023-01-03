@@ -59,6 +59,7 @@ passport.use(
                     userInfos = {
                         id: userQuery.rows[0].id,
                         firstName: profile._json.given_name,
+                        googleAuth: true,
                     };
                     
                 } else {
@@ -66,6 +67,7 @@ passport.use(
                     userInfos = {
                         id: currentUserQuery.rows[0].id,
                         firstName: profile._json.given_name,
+                        googleAuth: true,
                     };
 
                     console.log("test1 : " +userInfos)

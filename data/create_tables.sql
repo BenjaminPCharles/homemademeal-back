@@ -2,7 +2,7 @@
 BEGIN;
 
 -- D'abord on supprime les table 'si elle existe"
-DROP TABLE IF EXISTS "users", "recipes", "ingredients", "tags", "reciptes_has_tags", "reciptes_has_ingredients" CASCADE;
+DROP TABLE IF EXISTS "users", "receipts", "ingredients", "tags", "receipts_has_tags", "receipts_has_ingredients"  CASCADE;
 
 -- Ensuite on la (re)crée
 
@@ -20,9 +20,10 @@ CREATE TABLE "users" (
   "updated_at" TIMESTAMPTZ
 );
 
-CREATE TABLE "recipes" (
+CREATE TABLE "receipts" (
     "id" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "name" TEXT NOT NULL DEFAULT '',
+    "step" TEXT [],
     "user_id" INTEGER NOT NULL REFERENCES users("id") ON DELETE CASCADE,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updated_at" TIMESTAMPTZ
@@ -46,15 +47,15 @@ CREATE TABLE "tags" (
     "updated_at" TIMESTAMPTZ
 );
 
-CREATE TABLE "reciptes_has_tags" (
+CREATE TABLE "receipts_has_tags" (
     "tag_id" INTEGER NOT NULL REFERENCES tags("id") ON DELETE CASCADE,
-    "recipe_id" INTEGER NOT NULL REFERENCES recipes("id") ON DELETE CASCADE,
+    "receipt_id" INTEGER NOT NULL REFERENCES receipts("id") ON DELETE CASCADE,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE "reciptes_has_ingredients" (
+CREATE TABLE "receipts_has_ingredients" (
     "ingredient_id" INTEGER NOT NULL REFERENCES ingredients("id") ON DELETE CASCADE,
-    "recipe_id" INTEGER NOT NULL REFERENCES recipes("id") ON DELETE CASCADE,
+    "receipt_id" INTEGER NOT NULL REFERENCES receipts("id") ON DELETE CASCADE,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -65,7 +65,7 @@ router.get("/auth/google/callback", passport_1.default.authenticate("google", {
 }));
 // Reciptes route
 // router.get('/', checkReciptes);
-router.get('/api/v1/getAllReceiptsByUser', reciptesController_1.getAllByUserController);
+router.get('/api/v1/getAllReceiptsByUser/:user_id', reciptesController_1.getAllByUserController);
 router.post('/api/v1/addReceipt', reciptesController_1.addReciptController);
 router.delete('/api/v1/deleteReceipt/:id', reciptesController_1.deleteReceiptController);
 // Ingredients route

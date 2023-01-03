@@ -66,26 +66,40 @@ export const signUp = async (req: Request<never, never, { email: string; passwor
             const resultAdd: QueryResult = await pool.query(queryAdd);
 
             // NODEMAILER
+            // const transport = nodemailer.createTransport({
+            //     host: "smtp.mailtrap.io",
+            //     port: 2525,
+            //     auth: {
+            //       user: process.env.USER_MAIL,
+            //       pass: process.env.PASSWORD_MAIL
+            //     }
+            // });
+
             const transport = nodemailer.createTransport({
-                host: "smtp.mailtrap.io",
-                port: 2525,
+                host: "smtp-mail.outlook.com",
+                secure: false,
+                port: 587,
+                tls : {
+                    ciphers: 'SSLv3'
+                },
                 auth: {
-                  user: process.env.USER_MAIL,
-                  pass: process.env.PASSWORD_MAIL
+                  user: process.env.USER_MAIL_OUTLOOK,
+                  pass: process.env.PASSWORD_MAIL_OUTLOOK
                 }
             });
 
             const token = jwt.sign(resultAdd.rows[0].id, process.env.SECRET_JWT)
 
             if(token) {
-                const tokenWithoutDots = token.replace(/\./g,'-')
+                const tokenWithoutDots = token.replace(/\./g,'*')
+                console.log(tokenWithoutDots)
                 await transport.sendMail({
-                    from: 'Homemademeal <c72e713e5c-b76a9d+1@inbox.mailtrap.io>', // sender address
+                    // from: 'Homemademeal <c72e713e5c-b76a9d+1@inbox.mailtrap.io>', // sender address
+                    from: `Homemademeal <${process.env.USER_MAIL_OUTLOOK}>`, // sender address
                     to: 'benake83@gmail.com', // list of receivers
                     subject: 'Activation de compte', // Subject line
                     text: 'Activation de compte', // plaintext body
-                    // ENVOYER LE MAIL AU LIEN DE l'APP FRONT AVEC LE TOKEN BACK (USEEFFECT)
-                    html: `<p> Cliquez sur le lien pour activer votre compte: <a href="http://localhost:5173/confirm/${tokenWithoutDots}"> Activation </a> </p>` // html body
+                    html: `<p> Cliquez sur le lien pour activer votre compte: <a href="http://localhost:5173/confirm/${tokenWithoutDots}"> Activation </a></p>` // html body
                 });
             }
     
@@ -105,7 +119,12 @@ export const confirm = async (req: Request, res: Response) => {
 
         const tokenURL = req.params;
 
-        const decoded = jwt.verify(tokenURL.id, process.env.SECRET_JWT);
+        console.log("test-id : " + tokenURL.id);
+        const replaceByDots: string = tokenURL.id.replace(/\*/g,'.')
+        console.log("test-after : " + replaceByDots);
+
+        const decoded = jwt.verify(replaceByDots, process.env.SECRET_JWT);
+        console.log("test decoded : " + decoded);
 
         interface queryUpload {
             text?: string,
@@ -136,6 +155,7 @@ export const confirm = async (req: Request, res: Response) => {
                 is_confirm: resultCheck.rows[0].is_confirm,
             }
 
+            console.log(userInfos)
             return res.status(200).json(userInfos);
         }
         
@@ -151,9 +171,7 @@ export const confirm = async (req: Request, res: Response) => {
 export const login = async (req: Request<never, never, { email: string; password: string }, never>, res: Response) => {
     try {
 
-        const {email, password} = req.body;
-        console.log('email ' + email)
-        console.log('password ' + password)
+        const { email, password } = req.body;
 
         if(!email){
             res.status(404).json('Email cannot be empty')
@@ -176,7 +194,7 @@ export const login = async (req: Request<never, never, { email: string; password
 
         const resultCheck: QueryResult = await pool.query(queryCheck);
 
-        console.log(resultCheck.rows)
+        // console.log(resultCheck.rows)
         // console.log(resultCheck.rows[0].is_confirm)
 
         if(resultCheck && resultCheck.rows[0].is_confirm === true){
@@ -193,11 +211,13 @@ export const login = async (req: Request<never, never, { email: string; password
                 const userInfos = {
                     id: resultCheck.rows[0].id,
                     firstName:  resultCheck.rows[0].firstName,
+                    googleAuth: false
                 }
 
                 const token = jwt.sign({userInfos}, process.env.SECRET_JWT);
             
-                console.log(token)
+                // console.log(token)
+                console.log("logged")
                 
                 // return res.status(200).json(userInfos);
                 return res.cookie("access_token", token, {
@@ -230,18 +250,21 @@ export const auth = async (req: Request, res: Response, next: any) => {
         const token = req.cookies.access_token;
         
         if(!token){
+            console.log('pas auth')
             return res.status(403).json('Not authorize')
         }
         
         
         const data : any = jwt.verify(token, process.env.SECRET_JWT)
 
-      console.log(data.userInfos)
-      console.log(data)
+    //   console.log(data.userInfos)
+    //   console.log(data)
+        console.log('auth')
 
         req.user = {
             id: data.userInfos.id,
             firstName: data.userInfos.firstName,
+            googleAuth: data.userInfos.googleAuth
         }
 
         return next();

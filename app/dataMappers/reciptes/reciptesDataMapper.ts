@@ -2,13 +2,17 @@ import { QueryResult } from 'pg';
 import { pool } from "../../db_client";
 
 export const getAllUserReciptes = async (user_id:number):Promise<any> => {
+
+    console.log(user_id)
+    console.log(typeof user_id)
+    
     interface queryGetAllUser {
         text?: string,
         values?: number[]
     }
 
     const queryGetAllUser = {
-        text: 'SELECT * FROM "recipes" WHERE user_id = $1',
+        text: 'SELECT * FROM "receipts" WHERE user_id = $1',
         values: [user_id]
     }
 
@@ -25,7 +29,7 @@ export const deleteUserReciptes = async (id:number):Promise<any> => {
     }
 
     const queryDeleteUserReceipt = {
-        text: 'DELETE FROM "recipes" WHERE id = $1',
+        text: 'DELETE FROM "receipts" WHERE id = $1',
         values: [id]
     }
 
@@ -35,15 +39,18 @@ export const deleteUserReciptes = async (id:number):Promise<any> => {
 };
 
 
-export const addUserRecipt = async (name: string, user_id:number):Promise<any> => {
+export const addUserRecipt = async (name: string, step: string[] ,user_id:number):Promise<any> => {
+
+    console.log({ name, step ,user_id })
+
     interface queryDeleteReceipt {
         text?: string,
-        values?: (string | number)[]
+        values?: (string | number | string[])[]
     }
 
     const queryDeleteReceipt = {
-        text: 'INSERT INTO "recipes" (name, user_id) VALUES ($1, $2) RETURNING *',
-        values: [name, user_id]
+        text: 'INSERT INTO "receipts" (name, step ,user_id) VALUES ($1, array[$2], $3) RETURNING *',
+        values: [name, step ,user_id]
     }
 
     const resultDelete: QueryResult = await pool.query(queryDeleteReceipt);

@@ -19,7 +19,7 @@ router.patch('/api/v1/confirm/:id', confirm);
 router.post('/api/v1/login',login);
 router.patch('/api/v1/user/:id', auth ,uploadUser);
 
-router.get('/api/v1/logout',auth, logout);
+router.get('/api/v1/logout', auth, logout);
 router.get('/api/v1/secure', auth, secure);
 
 // Rajouter une route delete
@@ -62,7 +62,7 @@ router.get(
 
 // Reciptes route
 // router.get('/', checkReciptes);
-router.get('/api/v1/getAllReceiptsByUser', getAllByUserController)
+router.get('/api/v1/getAllReceiptsByUser/:user_id', getAllByUserController)
 router.post('/api/v1/addReceipt', addReciptController);
 router.delete('/api/v1/deleteReceipt/:id', deleteReceiptController);
 
